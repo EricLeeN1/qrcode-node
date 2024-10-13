@@ -5,6 +5,17 @@ const path = require("path");
 const directoryPath = "./images"; // 替换为您的图片目录路径
 console.log(Jimp);
 let txtArr = [];
+
+const removeProtocol = (url) => {
+  // 定义正则表达式，匹配 http:// 或 https://
+  const regex = /^(http:\/\/|https:\/\/|ftp:\/\/)/;
+
+  // 使用 replace 方法替换匹配到的部分为空字符串
+  const cleanedUrl = url.replace(regex, "");
+
+  return cleanedUrl;
+};
+
 fs.readdir(directoryPath, (err, files) => {
   //   console.log(files);
 
@@ -20,22 +31,30 @@ fs.readdir(directoryPath, (err, files) => {
   });
 
   // 读取图片信息
-  files.forEach((file) => {
+  files.forEach(async (file) => {
     const filePath = path.join(directoryPath, file);
-    fs.readFile(filePath, async (err, imgData) => {
-      if (err) {
-        console.log("Error stating file:", filePath);
-        return;
-      }
+    try {
+      const imgData = fs.readFileSync(filePath);
       const { bitmap } = await Jimp.read(imgData);
-      //   console.log(bitmap);
-
       const { data } = jsQR(bitmap.data, bitmap.width, bitmap.height);
-      //   console.log(data);
-      txtArr.push(data);
-      //   console.log(bitmap.width, bitmap.height); // 打印文件名和大小
-      console.log(txtArr);
-    });
+      // https://h5.clewm.net/?url=qr61.cn%2FotkFrD%2FqfpFfoa
+      txtArr.push(`https://h5.clewm.net/?url=${removeProtocol(data)}`);
+      if (txtArr.length == files.length) {
+        console.log(txtArr);
+        const jsonDatas = {
+          name: "药品地址列表",
+          lists: txtArr,
+        };
+        const jsonStr = JSON.stringify(jsonDatas);
+        try {
+          fs.writeFileSync("./data.json", jsonStr);
+          console.log("JSON data written to file successfully.");
+        } catch (err) {
+          console.error("Error writing JSON data to file:", err);
+        }
+      }
+    } catch (error) {
+      console.log("Error stating file:", filePath);
+    }
   });
-  console.log(txtArr);
 });
