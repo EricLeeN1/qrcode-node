@@ -1,9 +1,12 @@
+from time import sleep
 import requests
 from bs4 import BeautifulSoup
 
 def fetch_page(url):
     # 发送 HTTP GET 请求
     response = requests.get(url)
+
+    sleep(5)
 
     # 检查请求是否成功
     if response.status_code == 200:
@@ -13,13 +16,14 @@ def fetch_page(url):
         return None
 
 def parse_html(html):
+
     # 解析 HTML 内容
     soup = BeautifulSoup(html, 'html.parser')
 
     # 提取标题
-    title = soup.find(class_="common-title").text
+    title = soup.find(class_="title-wrapper").find(class_='common-title').get_text()
      # 提取别名
-    subtitle = soup.find(class_="common-title").find('span').text
+    subtitle = soup.find(class_="common-title").find('span').get_text()
     # 找到 class 为 stylelib-wrapper 所有的DOM 元素
     wrappers = soup.find_all(class_='stylelib-wrapper')
     # 选择 第二个 DOM 元素
@@ -56,6 +60,9 @@ def main():
     html_content = fetch_page(url)
     
     if html_content:
+
+        print(html_content)
+        
         # 解析 HTML 内容
         title, subtitle, infosText = parse_html(html_content)
 
