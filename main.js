@@ -37,7 +37,8 @@ fs.readdir(directoryPath, (err, files) => {
       const imgData = fs.readFileSync(filePath);
       const { bitmap } = await Jimp.read(imgData);
       const { data } = jsQR(bitmap.data, bitmap.width, bitmap.height);
-      // https://h5.clewm.net/?url=qr61.cn%2FotkFrD%2FqfpFfoa
+      console.log(data,filePath);
+      
       txtArr.push(`https://h5.clewm.net/?url=${removeProtocol(data)}`);
       if (txtArr.length == files.length) {
         console.log(txtArr);

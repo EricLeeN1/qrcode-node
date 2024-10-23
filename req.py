@@ -2,6 +2,7 @@
 
 import requests
 from bs4 import BeautifulSoup
+import pandas as pd
 
 
 def fetch_page(url,route):
@@ -28,7 +29,38 @@ def fetch_page(url,route):
     else:
         print(f"Failed to fetch the page. Status code: {response.status_code}")
         return None
+
+
+def parse_html(html_Infos):
+
+    msg = html_Infos['data']['qrcode_msg']
+    content_msg = msg['qrcode_compontent']
+
+    html_title = msg['qrcode_top_component'][0]['attribute_list'][0]['content_html']['value']
+
+    html_infos = content_msg[3]['attribute_list'][0]['content_html']['value']
     
+    html_remand = content_msg[4]['attribute_list'][0]['content_html']['value']
+    
+    html_tips = content_msg[6]['attribute_list'][0]['content_html']['value']
+    
+    soup_title = BeautifulSoup(html_title, 'html.parser')
+    soup_infos = BeautifulSoup(html_infos, 'html.parser')
+    soup_remand = BeautifulSoup(html_remand, 'html.parser')
+    soup_tips = BeautifulSoup(html_tips, 'html.parser')
+
+    title = soup_title.get_text()
+    infos = soup_infos.get_text()
+    remand = soup_remand.get_text()
+    tips = soup_tips.get_text()
+    html = {
+        'title':title,
+        'infos':infos,
+        'remand':remand,
+        'tips':tips
+    }
+    return html
+
 def main():
     url = "https://nc.cli.im/qrcoderoute/qrcodeRouteNew"
 
@@ -65,33 +97,25 @@ def main():
     "qr61.cn/otkFrD/q7Het76"
   ]
     
-    html_Infos = fetch_page(url)
-
-    msg = html_Infos['data']['qrcode_msg']
-    content_msg = msg['qrcode_compontent']
-
-    html_title = msg['qrcode_top_component'][0]['attribute_list'][0]['content_html']['value']
-
-    html_infos = content_msg[3]['attribute_list'][0]['content_html']['value']
+    # 存储请求结果的列表
+    results = []
     
-    html_remand = content_msg[4]['attribute_list'][0]['content_html']['value']
-    
-    html_tips = content_msg[6]['attribute_list'][0]['content_html']['value']
-    
-    soup_title = BeautifulSoup(html_title, 'html.parser')
-    soup_infos = BeautifulSoup(html_infos, 'html.parser')
-    soup_remand = BeautifulSoup(html_remand, 'html.parser')
-    soup_tips = BeautifulSoup(html_tips, 'html.parser')
+    for route in lists:
+        try:    
+            html_Infos = fetch_page(url,route)
+            data = parse_html(html_Infos)
+            results.append(data)
+        except requests.RequestException as e:
+            print(f"请求 {url} 失败: {e}")
 
-    title = soup_title.get_text()
-    infos = soup_infos.get_text()
-    remand = soup_remand.get_text()
-    tips = soup_tips.get_text()
+    # 将结果转换为 DataFrame
+    df = pd.DataFrame(results)
 
-    print(title)
-    print(infos)
-    print(remand)
-    print(tips)
+    # 保存为 Excel 文件
+    output_file = "request_results.xlsx"
+    df.to_excel(output_file, index=False)
+
+    print(f"请求结果已成功保存到 {output_file}")
 
 
 if __name__ == '__main__':
